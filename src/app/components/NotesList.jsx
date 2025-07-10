@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil, ArchiveRestore, Archive } from "lucide-react";
 import { motion } from "framer-motion";
 
 function getNoteCategory(dateStr) {
@@ -28,7 +28,6 @@ function groupNotes(notes) {
   }, {});
 }
 
-// Gradient category header styles
 const categoryColors = {
   Today: {
     bg: "bg-green-50",
@@ -50,7 +49,7 @@ const categoryColors = {
   },
 };
 
-export default function NotesList({ notes, onDelete }) {
+export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) {
   if (notes.length === 0) {
     return <p className="text-gray-500 text-center italic">No notes available.</p>;
   }
@@ -81,30 +80,67 @@ export default function NotesList({ notes, onDelete }) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className={`relative border ${color.border} ${color.bg} p-0 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300`}
+                    className={`relative border ${color.border} ${color.bg} ${
+                      note.archived ? "opacity-50" : ""
+                    } p-0 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300`}
                   >
                     {/* Header */}
                     <div
                       className={`px-4 py-2 rounded-t-2xl ${color.gradient} ${color.text} flex justify-between items-center shadow-inner`}
                     >
-                      <h2 className="text-lg font-semibold truncate max-w-[80%]">
+                      <h2 className="text-lg font-semibold truncate max-w-[60%]">
                         {note.title || "Untitled"}
                       </h2>
-                      <button
-                        onClick={() => onDelete(note.id)}
-                        className="text-white hover:text-red-300 transition-colors p-1"
-                        aria-label={`Delete note ${note.title}`}
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+
+                      <div className="flex gap-2 items-center">
+                        {/* Archive / Unarchive */}
+                        <button
+                          onClick={() => onArchiveToggle(note)}
+                          className="hover:text-purple-200 transition-colors p-1"
+                          aria-label={`Archive toggle for note ${note.title}`}
+                        >
+                          {note.archived ? (
+                            <ArchiveRestore className="w-5 h-5" />
+                          ) : (
+                            <Archive className="w-5 h-5" />
+                          )}
+                        </button>
+
+                        {/* Edit - disabled when archived */}
+                        {!note.archived && (
+                          <button
+                            onClick={() => onEdit(note)}
+                            className="hover:text-yellow-300 transition-colors p-1"
+                            aria-label={`Edit note ${note.title}`}
+                          >
+                            <Pencil className="w-5 h-5" />
+                          </button>
+                        )}
+
+                        {/* Delete */}
+                        <button
+                          onClick={() => onDelete(note.id)}
+                          className="hover:text-red-300 transition-colors p-1"
+                          aria-label={`Delete note ${note.title}`}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Content */}
-                    <div className="px-4 py-3">
-                      <p className="text-gray-800 whitespace-pre-line mb-4">
+                    <div className="px-4 py-3 space-y-1">
+                      <p className="text-gray-800 whitespace-pre-line">
                         {note.content || "(No content)"}
                       </p>
-                      <p className="text-xs text-gray-500 text-right">{formattedDate}</p>
+                      <div className="flex justify-between items-center text-xs text-gray-500 pt-2">
+                        <span>{formattedDate}</span>
+                        {note.archived && (
+                          <span className="bg-gray-200 px-2 py-0.5 rounded-full text-gray-700 font-medium text-xs">
+                            Archived
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 );

@@ -1,14 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import api from "../lib/api";
 
 export function useNotes() {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  async function fetchNotes() {
+  async function fetchNotes(showArchived = false) {
+    setLoading(true);
     try {
-      const res = await api.get("/notes");
-      setNotes(res.data);
+      const url = showArchived ? "/notes/archived" : "/notes";
+      const res = await api.get(url);
+      setNotes((prev) => res.data); // smoother transition
     } catch (err) {
       console.error("Failed to fetch notes:", err);
     } finally {
@@ -16,11 +18,29 @@ export function useNotes() {
     }
   }
 
+  async function archiveNote(id) {
+    try {
+      await api.put(`/notes/${id}/archive`);
+      await fetchNotes(false);
+    } catch (err) {
+      console.error("Failed to archive note:", err);
+    }
+  }
+
+  async function unarchiveNote(id) {
+    try {
+      await api.put(`/notes/${id}/unarchive`);
+      await fetchNotes(true);
+    } catch (err) {
+      console.error("Failed to unarchive note:", err);
+    }
+  }
+
   async function addNote(title, content) {
     if (!title || !content) return;
     try {
       await api.post("/notes", { title, content });
-      await fetchNotes();
+      await fetchNotes(false);
     } catch (err) {
       console.error("Failed to add note:", err);
     }
@@ -35,9 +55,24 @@ export function useNotes() {
     }
   }
 
-  useEffect(() => {
-    fetchNotes();
-  }, []);
+  async function updateNote(id, title, content) {
+    if (!title || !content) return;
+    try {
+      await api.put(`/notes/${id}`, { title, content });
+      await fetchNotes();
+    } catch (err) {
+      console.error("Failed to update note:", err);
+    }
+  }
 
-  return { notes, loading, addNote, deleteNote };
+  return {
+    notes,
+    loading,
+    fetchNotes,
+    addNote,
+    deleteNote,
+    updateNote,
+    archiveNote,
+    unarchiveNote,
+  };
 }
