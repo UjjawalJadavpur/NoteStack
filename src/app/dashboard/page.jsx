@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [editingNote, setEditingNote] = useState(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [priority, setPriority] = useState("MEDIUM");
   const [tab, setTab] = useState("active");
 
   useEffect(() => {
@@ -58,9 +59,9 @@ export default function DashboardPage() {
     if (!title.trim() && !content.trim()) return;
 
     if (editingNote) {
-      updateNote(editingNote.id, title, content);
+      updateNote(editingNote.id, title, content, priority);
     } else {
-      addNote(title, content);
+      addNote(title, content, priority);
     }
 
     resetModal();
@@ -69,6 +70,7 @@ export default function DashboardPage() {
   const resetModal = () => {
     setTitle("");
     setContent("");
+    setPriority("MEDIUM");
     setIsOpen(false);
     setEditingNote(null);
   };
@@ -78,7 +80,7 @@ export default function DashboardPage() {
       <Navbar />
 
       <main className="p-6 max-w-3xl mx-auto">
-        {/* Tabs with mini loader */}
+        {/* Tabs */}
         <div className="flex items-center gap-2 mb-6">
           <button
             onClick={() => setTab("active")}
@@ -108,7 +110,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Notes list with animation */}
+        {/* Notes List */}
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -124,6 +126,7 @@ export default function DashboardPage() {
                 setEditingNote(note);
                 setTitle(note.title);
                 setContent(note.content);
+                setPriority(note.priority || "MEDIUM");
                 setIsOpen(true);
               }}
               onArchiveToggle={handleArchiveToggle}
@@ -165,6 +168,16 @@ export default function DashboardPage() {
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-400 outline-none"
             />
+
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 outline-none"
+            >
+              <option value="HIGH">High Priority 🔴</option>
+              <option value="MEDIUM">Medium Priority 🟠</option>
+              <option value="LOW">Low Priority 🟢</option>
+            </select>
 
             <div className="flex justify-end gap-2 pt-2">
               <button

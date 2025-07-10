@@ -36,16 +36,6 @@ export function useNotes() {
     }
   }
 
-  async function addNote(title, content) {
-    if (!title || !content) return;
-    try {
-      await api.post("/notes", { title, content });
-      await fetchNotes(false);
-    } catch (err) {
-      console.error("Failed to add note:", err);
-    }
-  }
-
   async function deleteNote(id) {
     try {
       await api.delete(`/notes/${id}`);
@@ -55,10 +45,20 @@ export function useNotes() {
     }
   }
 
-  async function updateNote(id, title, content) {
+  async function addNote(title, content, priority = "MEDIUM") {
     if (!title || !content) return;
     try {
-      await api.put(`/notes/${id}`, { title, content });
+      await api.post("/notes", { title, content, priority });
+      await fetchNotes(false);
+    } catch (err) {
+      console.error("Failed to add note:", err);
+    }
+  }
+
+  async function updateNote(id, title, content, priority = "MEDIUM") {
+    if (!title || !content) return;
+    try {
+      await api.put(`/notes/${id}`, { title, content, priority });
       await fetchNotes();
     } catch (err) {
       console.error("Failed to update note:", err);
