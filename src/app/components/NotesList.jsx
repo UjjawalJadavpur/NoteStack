@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Trash2, Pencil, ArchiveRestore, Archive } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -22,7 +23,7 @@ function getNoteCategory(dateStr) {
 function groupNotes(notes) {
   return notes
     .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Newest first
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .reduce((groups, note) => {
       const category = getNoteCategory(note.createdAt);
       if (!groups[category]) groups[category] = [];
@@ -53,6 +54,8 @@ const categoryColors = {
 };
 
 export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) {
+  const [selectedNote, setSelectedNote] = useState(null);
+
   if (notes.length === 0) {
     return <p className="text-gray-500 text-center italic">No notes available.</p>;
   }
@@ -60,103 +63,170 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
   const grouped = groupNotes(notes);
 
   return (
-    <div className="space-y-10">
-      {["Today", "Yesterday", "Past"].map((category) =>
-        grouped[category] ? (
-          <section key={category}>
-            <h3 className="text-xl font-bold text-gray-700 border-b pb-1 mb-4">{category}</h3>
-            <div className="grid grid-cols-1 gap-4">
-              {grouped[category].map((note, index) => {
-                const date = new Date(note.createdAt);
-                const formattedDate = new Intl.DateTimeFormat("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }).format(date);
+    <>
+      <div className="space-y-10">
+        {["Today", "Yesterday", "Past"].map((category) =>
+          grouped[category] ? (
+            <section key={category}>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">{category}</h3>
 
-                const color = categoryColors[category];
+              <div className="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                {grouped[category].map((note, index) => {
+                  const date = new Date(note.createdAt);
+                  const formattedDate = new Intl.DateTimeFormat("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(date);
 
-                return (
-                  <motion.div
-                    key={note.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className={`relative border ${color.border} ${color.bg} ${
-                      note.archived ? "opacity-50" : ""
-                    } p-0 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300`}
-                  >
-                    {/* Header */}
-                    <div
-                      className={`px-4 py-2 rounded-t-2xl ${color.gradient} ${color.text} flex justify-between items-center shadow-inner`}
+                  const color = categoryColors[category];
+                  const isLongContent = note.content.length > 200;
+
+                  return (
+                    <motion.div
+                      key={note.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className={`min-w-[400px] max-w-[450px] border ${color.border} ${color.bg} ${
+                        note.archived ? "opacity-50" : "cursor-pointer"
+                      } p-0 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 snap-start`}
                     >
-                      <h2 className="text-lg font-semibold truncate max-w-[60%]">
-                        {note.title || "Untitled"}
-                      </h2>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                            note.priority === "HIGH"
-                              ? "bg-red-100 text-red-600"
-                              : note.priority === "LOW"
-                              ? "bg-green-100 text-green-600"
-                              : "bg-yellow-100 text-yellow-600"
-                          }`}
-                        >
-                          {note.priority}
-                        </span>
-                        <button
-                          onClick={() => onArchiveToggle(note)}
-                          className="hover:text-purple-200 transition-colors p-1"
-                          aria-label={`Archive toggle for note ${note.title}`}
-                        >
-                          {note.archived ? (
-                            <ArchiveRestore className="w-5 h-5" />
-                          ) : (
-                            <Archive className="w-5 h-5" />
-                          )}
-                        </button>
-                        {!note.archived && (
-                          <button
-                            onClick={() => onEdit(note)}
-                            className="hover:text-yellow-300 transition-colors p-1"
-                            aria-label={`Edit note ${note.title}`}
+                      {/* Header */}
+                      <div
+                        className={`px-4 py-2 rounded-t-2xl ${color.gradient} ${color.text} flex justify-between items-center shadow-inner`}
+                      >
+                        <h2 className="text-lg font-semibold truncate max-w-[60%]">
+                          {note.title || "Untitled"}
+                        </h2>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              note.priority === "HIGH"
+                                ? "bg-red-100 text-red-600"
+                                : note.priority === "LOW"
+                                ? "bg-green-100 text-green-600"
+                                : "bg-yellow-100 text-yellow-600"
+                            }`}
                           >
-                            <Pencil className="w-5 h-5" />
+                            {note.priority}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onArchiveToggle(note);
+                            }}
+                            className="hover:text-purple-200 transition-colors p-1"
+                          >
+                            {note.archived ? (
+                              <ArchiveRestore className="w-5 h-5" />
+                            ) : (
+                              <Archive className="w-5 h-5" />
+                            )}
+                          </button>
+                          {!note.archived && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(note);
+                              }}
+                              className="hover:text-yellow-300 transition-colors p-1"
+                            >
+                              <Pencil className="w-5 h-5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(note.id);
+                            }}
+                            className="hover:text-red-300 transition-colors p-1"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="px-4 py-3 flex flex-col justify-between h-[180px]">
+                        <p className="text-gray-800 whitespace-pre-line line-clamp-4 text-md mb-2">
+                          {note.content || "(No content)"}
+                        </p>
+
+                        {isLongContent && (
+                          <button
+                            onClick={() => setSelectedNote(note)}
+                            className="text-blue-600 text-sm font-medium hover:underline self-start mb-2"
+                          >
+                            Read more...
                           </button>
                         )}
-                        <button
-                          onClick={() => onDelete(note.id)}
-                          className="hover:text-red-300 transition-colors p-1"
-                          aria-label={`Delete note ${note.title}`}
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
 
-                    {/* Content */}
-                    <div className="px-4 py-3 space-y-1">
-                      <p className="text-gray-800 whitespace-pre-line">
-                        {note.content || "(No content)"}
-                      </p>
-                      <div className="flex justify-between items-center text-xs text-gray-500 pt-2">
-                        <span>{formattedDate}</span>
-                        {note.archived && (
-                          <span className="bg-gray-200 px-2 py-0.5 rounded-full text-gray-700 font-medium text-xs">
-                            Archived
-                          </span>
-                        )}
+                        <div className="flex justify-between items-center text-xs text-gray-500 mt-auto">
+                          <span>{formattedDate}</span>
+                          {note.archived && (
+                            <span className="bg-gray-200 px-2 py-0.5 rounded-full text-gray-700 font-medium">
+                              Archived
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null
+        )}
+      </div>
+
+      {/* Full-screen Read Modal */}
+      {selectedNote && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="bg-white max-w-2xl w-full rounded-xl p-6 shadow-lg relative">
+            <button
+              onClick={() => setSelectedNote(null)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-red-500 text-xl"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-gray-800">
+                {selectedNote.title || "Untitled"}
+              </h2>
+
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span className="font-medium">
+                  Priority:{" "}
+                  <span
+                    className={`inline-block px-2 py-1 rounded-full ${
+                      selectedNote.priority === "HIGH"
+                        ? "bg-red-100 text-red-600"
+                        : selectedNote.priority === "LOW"
+                        ? "bg-green-100 text-green-600"
+                        : "bg-yellow-100 text-yellow-600"
+                    }`}
+                  >
+                    {selectedNote.priority}
+                  </span>
+                </span>
+                <span>
+                  {new Intl.DateTimeFormat("en-US", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }).format(new Date(selectedNote.createdAt))}
+                </span>
+              </div>
+
+              <div className="max-h-[50vh] overflow-y-auto text-gray-800 whitespace-pre-line border rounded-md p-4 bg-gray-50">
+                {selectedNote.content}
+              </div>
             </div>
-          </section>
-        ) : null
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }

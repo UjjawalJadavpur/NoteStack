@@ -5,12 +5,15 @@ export function useNotes() {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  async function fetchNotes(showArchived = false) {
+  async function fetchNotes(type = "all") {
     setLoading(true);
     try {
-      const url = showArchived ? "/notes/archived" : "/notes";
+      let url = "/notes";
+      if (type === "active") url = "/notes/active";
+      else if (type === "archived") url = "/notes/archived";
+
       const res = await api.get(url);
-      setNotes((prev) => res.data); // smoother transition
+      setNotes(res.data);
     } catch (err) {
       console.error("Failed to fetch notes:", err);
     } finally {
@@ -21,7 +24,6 @@ export function useNotes() {
   async function archiveNote(id) {
     try {
       await api.put(`/notes/${id}/archive`);
-      await fetchNotes(false);
     } catch (err) {
       console.error("Failed to archive note:", err);
     }
@@ -30,7 +32,6 @@ export function useNotes() {
   async function unarchiveNote(id) {
     try {
       await api.put(`/notes/${id}/unarchive`);
-      await fetchNotes(true);
     } catch (err) {
       console.error("Failed to unarchive note:", err);
     }
@@ -39,7 +40,6 @@ export function useNotes() {
   async function deleteNote(id) {
     try {
       await api.delete(`/notes/${id}`);
-      await fetchNotes();
     } catch (err) {
       console.error("Failed to delete note:", err);
     }
@@ -49,7 +49,6 @@ export function useNotes() {
     if (!title || !content) return;
     try {
       await api.post("/notes", { title, content, priority });
-      await fetchNotes(false);
     } catch (err) {
       console.error("Failed to add note:", err);
     }
@@ -59,7 +58,6 @@ export function useNotes() {
     if (!title || !content) return;
     try {
       await api.put(`/notes/${id}`, { title, content, priority });
-      await fetchNotes();
     } catch (err) {
       console.error("Failed to update note:", err);
     }

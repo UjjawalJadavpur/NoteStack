@@ -9,6 +9,7 @@ import NotesList from "../components/NotesList";
 import { useNotes } from "../hooks/useNotes";
 import { useAuthStore } from "../zustand/useAuthStore";
 import { motion, AnimatePresence } from "framer-motion";
+import RichTextEditor from "../components/RichTextEditor";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function DashboardPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
-  const [tab, setTab] = useState("active");
+  const [tab, setTab] = useState("all");
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -44,26 +45,28 @@ export default function DashboardPage() {
   }, [router, setName, setEmail]);
 
   useEffect(() => {
-    fetchNotes(tab === "archived");
+    fetchNotes(tab); // "all" | "active" | "archived"
   }, [tab]);
 
-  const handleArchiveToggle = (note) => {
+  const handleArchiveToggle = async (note) => {
     if (note.archived) {
-      unarchiveNote(note.id);
+      await unarchiveNote(note.id);
     } else {
-      archiveNote(note.id);
+      await archiveNote(note.id);
     }
+    fetchNotes(tab); // Refresh current tab
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() && !content.trim()) return;
 
     if (editingNote) {
-      updateNote(editingNote.id, title, content, priority);
+      await updateNote(editingNote.id, title, content, priority);
     } else {
-      addNote(title, content, priority);
+      await addNote(title, content, priority);
     }
 
+    await fetchNotes(tab); // Refresh current tab
     resetModal();
   };
 
@@ -79,29 +82,22 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 relative">
       <Navbar />
 
-      <main className="p-6 max-w-3xl mx-auto">
+      <main className="p-6 max-w-full mx-auto ml-30">
         {/* Tabs */}
         <div className="flex items-center gap-2 mb-6">
-          <button
-            onClick={() => setTab("active")}
-            className={`px-4 py-2 rounded-full font-medium ${
-              tab === "active"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            } transition`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setTab("archived")}
-            className={`px-4 py-2 rounded-full font-medium ${
-              tab === "archived"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-            } transition`}
-          >
-            Archived
-          </button>
+          {["all", "active", "archived"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setTab(type)}
+              className={`px-4 py-2 rounded-full font-medium capitalize ${
+                tab === type
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+              } transition`}
+            >
+              {type}
+            </button>
+          ))}
 
           {loading && (
             <span className="text-sm text-gray-500 animate-pulse ml-2">
@@ -136,10 +132,10 @@ export default function DashboardPage() {
       </main>
 
       {/* Add Note Button */}
-      {tab === "active" && (
+      {(
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 active:scale-95"
+          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-full shadow-lg transition-all duration-300 active:scale-95"
           aria-label="Add Note"
         >
           <Plus className="w-6 h-6" />
@@ -161,14 +157,7 @@ export default function DashboardPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 outline-none"
             />
 
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your note..."
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-
+            <RichTextEditor content={content} setContent={setContent} />
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
