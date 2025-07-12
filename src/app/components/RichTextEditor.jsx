@@ -1,33 +1,35 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import "suneditor/dist/css/suneditor.min.css";
-
-// Dynamically load SunEditor (SSR-safe for Next.js App Router)
-const SunEditor = dynamic(() => import("suneditor-react"), {
-  ssr: false,
-});
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { useEffect } from "react";
 
 export default function RichTextEditor({ content, setContent }) {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content,
+    onUpdate: ({ editor }) => {
+      setContent(editor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    if (editor && content) {
+      editor.commands.setContent(content);
+    }
+  }, [editor, content]);
+
   return (
-    <SunEditor
-      defaultValue={content}
-      setContents={content}
-      onChange={setContent}
-      height="300px"
-      setOptions={{
-        buttonList: [
-          ["undo", "redo"],
-          ["formatBlock"],
-          ["bold", "italic", "underline", "strike"],
-          ["fontSize", "fontColor", "hiliteColor"],
-          ["align", "list", "table"],
-          ["link", "image", "codeView"],
-        ],
-        fontSize: [12, 14, 16, 18, 24, 32],
-        imageUploadUrl: "http://localhost:8080/api/upload", // Your Spring Boot endpoint
-        imageUploadHeader: {}, // For JWT tokens if needed
-      }}
-    />
+    <div className="border border-gray-300 rounded-md p-2">
+      {editor && (
+        <div className="flex gap-2 mb-2">
+          <button onClick={() => editor.chain().focus().toggleBold().run()} className="px-2 py-1 border rounded hover:bg-gray-200">Bold</button>
+          <button onClick={() => editor.chain().focus().toggleItalic().run()} className="px-2 py-1 border rounded hover:bg-gray-200">Italic</button>
+          <button onClick={() => editor.chain().focus().toggleBulletList().run()} className="px-2 py-1 border rounded hover:bg-gray-200">List</button>
+          <button onClick={() => editor.chain().focus().setParagraph().run()} className="px-2 py-1 border rounded hover:bg-gray-200">Paragraph</button>
+        </div>
+      )}
+      <EditorContent editor={editor} className="min-h-[150px]" />
+    </div>
   );
 }

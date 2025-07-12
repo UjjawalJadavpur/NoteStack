@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Trash2, Pencil, ArchiveRestore, Archive } from "lucide-react";
 import { motion } from "framer-motion";
+import { exportNoteToPDF } from "../utils/exportToPdf.jsx";
+import TextToSpeechButton from "./TextToSpeechButton";
 
 function getNoteCategory(dateStr) {
   const noteDate = new Date(dateStr);
@@ -53,11 +55,18 @@ const categoryColors = {
   },
 };
 
-export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) {
+export default function NotesList({
+  notes,
+  onDelete,
+  onEdit,
+  onArchiveToggle,
+}) {
   const [selectedNote, setSelectedNote] = useState(null);
 
   if (notes.length === 0) {
-    return <p className="text-gray-500 text-center italic">No notes available.</p>;
+    return (
+      <p className="text-gray-500 text-center italic">No notes available.</p>
+    );
   }
 
   const grouped = groupNotes(notes);
@@ -68,7 +77,9 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
         {["Today", "Yesterday", "Past"].map((category) =>
           grouped[category] ? (
             <section key={category}>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">{category}</h3>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">
+                {category}
+              </h3>
 
               <div className="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
                 {grouped[category].map((note, index) => {
@@ -89,8 +100,10 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className={`min-w-[400px] max-w-[450px] border ${color.border} ${color.bg} ${
-                        note.archived ? "opacity-50" : "cursor-pointer"
+                      className={`min-w-[400px] max-w-[450px] border ${
+                        color.border
+                      } ${color.bg} ${
+                        note.archived ? "opacity-50" : ""
                       } p-0 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 snap-start`}
                     >
                       {/* Header */}
@@ -112,12 +125,24 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
                           >
                             {note.priority}
                           </span>
+
+                          {/* PDF Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              exportNoteToPDF(note);
+                            }}
+                            className="hover:text-blue-200 transition-colors p-1 cursor-pointer"
+                            title="Export to PDF"
+                          >
+                            🖨️
+                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onArchiveToggle(note);
                             }}
-                            className="hover:text-purple-200 transition-colors p-1"
+                            className="hover:text-purple-200 transition-colors p-1 cursor-pointer"
                           >
                             {note.archived ? (
                               <ArchiveRestore className="w-5 h-5" />
@@ -131,7 +156,7 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
                                 e.stopPropagation();
                                 onEdit(note);
                               }}
-                              className="hover:text-yellow-300 transition-colors p-1"
+                              className="hover:text-yellow-300 transition-colors p-1 cursor-pointer"
                             >
                               <Pencil className="w-5 h-5" />
                             </button>
@@ -141,7 +166,7 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
                               e.stopPropagation();
                               onDelete(note.id);
                             }}
-                            className="hover:text-red-300 transition-colors p-1"
+                            className="hover:text-red-300 transition-colors p-1 cursor-pointer"
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>
@@ -150,14 +175,15 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
 
                       {/* Content */}
                       <div className="px-4 py-3 flex flex-col justify-between h-[180px]">
-                        <p className="text-gray-800 whitespace-pre-line line-clamp-4 text-md mb-2">
-                          {note.content || "(No content)"}
-                        </p>
+                        <div
+                          className="prose prose-sm max-w-none text-gray-800 mb-2 line-clamp-4 overflow-hidden"
+                          dangerouslySetInnerHTML={{ __html: note.content }}
+                        ></div>
 
                         {isLongContent && (
                           <button
                             onClick={() => setSelectedNote(note)}
-                            className="text-blue-600 text-sm font-medium hover:underline self-start mb-2"
+                            className="text-blue-600 text-sm font-medium hover:underline self-start mb-2 cursor-pointer"
                           >
                             Read more...
                           </button>
@@ -196,7 +222,9 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
               <h2 className="text-2xl font-bold text-gray-800">
                 {selectedNote.title || "Untitled"}
               </h2>
-
+              <TextToSpeechButton
+                rawText={selectedNote.title + ". " + selectedNote.content}
+              />
               <div className="flex items-center justify-between text-sm text-gray-600">
                 <span className="font-medium">
                   Priority:{" "}
@@ -220,9 +248,10 @@ export default function NotesList({ notes, onDelete, onEdit, onArchiveToggle }) 
                 </span>
               </div>
 
-              <div className="max-h-[50vh] overflow-y-auto text-gray-800 whitespace-pre-line border rounded-md p-4 bg-gray-50">
-                {selectedNote.content}
-              </div>
+              <div
+                className="max-h-[50vh] overflow-y-auto text-gray-800 border rounded-md p-4 bg-gray-50 prose prose-base max-w-none"
+                dangerouslySetInnerHTML={{ __html: selectedNote.content }}
+              ></div>
             </div>
           </div>
         </div>
