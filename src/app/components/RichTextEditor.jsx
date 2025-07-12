@@ -1,35 +1,42 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 
-export default function RichTextEditor({ content, setContent }) {
+export default function RichTextEditor({
+  content,
+  setContent,
+  readOnly = false,
+  placeholder = "Write your note here...",
+}) {
   const editor = useEditor({
     extensions: [StarterKit],
-    content,
+    content: content || "",
+    editable: !readOnly,
     onUpdate: ({ editor }) => {
-      setContent(editor.getHTML());
+      const html = editor.getHTML();
+      if (html !== content) {
+        setContent(html);
+      }
     },
   });
 
+  // Keep TipTap state in sync with `content` prop
   useEffect(() => {
-    if (editor && content) {
-      editor.commands.setContent(content);
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content, false); // false = no history entry
     }
-  }, [editor, content]);
+  }, [content, editor]);
+
+  if (!editor) return <div className="text-gray-400">Loading editor...</div>;
 
   return (
-    <div className="border border-gray-300 rounded-md p-2">
-      {editor && (
-        <div className="flex gap-2 mb-2">
-          <button onClick={() => editor.chain().focus().toggleBold().run()} className="px-2 py-1 border rounded hover:bg-gray-200">Bold</button>
-          <button onClick={() => editor.chain().focus().toggleItalic().run()} className="px-2 py-1 border rounded hover:bg-gray-200">Italic</button>
-          <button onClick={() => editor.chain().focus().toggleBulletList().run()} className="px-2 py-1 border rounded hover:bg-gray-200">List</button>
-          <button onClick={() => editor.chain().focus().setParagraph().run()} className="px-2 py-1 border rounded hover:bg-gray-200">Paragraph</button>
-        </div>
-      )}
-      <EditorContent editor={editor} className="min-h-[150px]" />
+    <div className="border border-gray-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+      <EditorContent
+        editor={editor}
+        className={`p-3 prose prose-sm max-w-none ${readOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
+      />
     </div>
   );
 }

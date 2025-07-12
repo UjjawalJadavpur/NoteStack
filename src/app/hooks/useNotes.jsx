@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import api from "../lib/api";
 
 export function useNotes() {
   const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  async function fetchNotes(type = "all") {
+  const fetchNotes = useCallback(async (type = "all") => {
     setLoading(true);
     try {
       let url = "/notes";
@@ -13,13 +13,14 @@ export function useNotes() {
       else if (type === "archived") url = "/notes/archived";
 
       const res = await api.get(url);
+      console.log("✅ Notes fetched:", res.data);
       setNotes(res.data);
     } catch (err) {
-      console.error("Failed to fetch notes:", err);
+      console.error("❌ Failed to fetch notes:", err);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   async function archiveNote(id) {
     try {

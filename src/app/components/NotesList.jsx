@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import NoteCard from "./NoteCard";
 import NoteCardSkeleton from "./NoteCardSkeleton";
 import { groupNotes } from "../utils/noteGrouping";
 import { motion } from "framer-motion";
+import ReadNoteModal from "./ReadNoteModal";
 
 
 // Add loading as prop
@@ -16,7 +17,7 @@ export default function NotesList({
   const [selectedNote, setSelectedNote] = useState(null);
   const [pastPage, setPastPage] = useState(1);
 
-  const grouped = groupNotes(notes);
+  const grouped = useMemo(() => groupNotes(notes), [notes]);
   const ITEMS_PER_PAGE = 6;
 
   const shimmerArray = (count) =>

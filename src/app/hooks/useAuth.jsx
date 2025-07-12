@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { saveTokenToStore } from "../utils/authUtils";
 import { parseJwt } from "../utils/parseJwt";
 import { TOKEN_KEY } from "../utils/constants";
+import { useAuthStore } from "../zustand/useAuthStore";
 
 export function useAuth({ guard = false } = {}) {
   const router = useRouter();
