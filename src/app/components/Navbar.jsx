@@ -17,13 +17,9 @@ export default function Navbar() {
     router.push("/login");
   }
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
     }
@@ -40,53 +36,57 @@ export default function Navbar() {
   }, [dropdownOpen]);
 
   return (
-    <nav className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+    <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center border-b border-gray-200">
       {/* Left - Welcome */}
-      <div className="text-xl font-bold text-gray-700">
+      <div className="text-xl font-semibold text-gray-800">
         Welcome, <span className="text-blue-600">{name || "User"}</span>
       </div>
 
       {/* Right - Brand + Dropdown */}
-      <div className="flex items-center gap-4 relative">
-        <div className="text-lg font-bold text-blue-600">NoteStack</div>
+      <div className="flex items-center gap-6 relative">
+        <div className="text-lg font-bold text-blue-700 tracking-wide">NoteStack</div>
 
         <div className="relative" ref={dropdownRef}>
           <button
-            className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
             onClick={() => setDropdownOpen(!dropdownOpen)}
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
             aria-label="User menu"
           >
-            <User className="h-5 w-5" />
-            <ChevronDown className="h-4 w-4" />
+            <User className="h-5 w-5 text-gray-600" />
+            <ChevronDown className="h-4 w-4 text-gray-600" />
           </button>
 
-          {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg z-20 border overflow-hidden divide-y divide-gray-200 transition-all duration-200 origin-top-right">
-              {/* User Info */}
-              <div className="px-4 py-3">
-                <p className="font-medium text-gray-800 truncate">{name}</p>
-                <p className="text-sm text-gray-500 truncate">{email}</p>
-              </div>
+          {/* Dropdown */}
+          <div
+            className={`absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-20 transition-all duration-200 transform origin-top-right ${
+              dropdownOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
+            }`}
+          >
+            {/* User Info */}
+            <div className="px-4 py-3 bg-gray-50 border-b">
+              <p className="font-semibold text-gray-800 truncate">{name}</p>
+              <p className="text-sm text-gray-500 truncate">{email}</p>
+            </div>
 
-              {/* Change Password */}
+            {/* Actions */}
+            <div className="flex flex-col">
               <button
-                className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm"
+                className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm text-gray-700 transition"
                 onClick={() => alert("Change password feature coming soon!")}
               >
                 Change Password
               </button>
 
-              {/* Logout */}
               <button
-                className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm text-red-600 font-semibold"
+                className="w-full text-left px-4 py-3 hover:bg-red-50 text-sm text-red-600 font-semibold transition"
                 onClick={logout}
               >
                 Logout
               </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </nav>
