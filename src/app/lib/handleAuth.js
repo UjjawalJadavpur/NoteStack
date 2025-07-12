@@ -1,8 +1,6 @@
 import { login, register } from "./auth";
-import { parseJwt } from "../utils/parseJwt";
-import { useAuthStore } from "../zustand/useAuthStore";
+import { saveTokenToStore } from "../utils/authUtils";
 import { TOKEN_KEY } from "../utils/constants";
-
 
 export async function handleAuth(mode, formData, router, setError) {
   try {
@@ -14,13 +12,7 @@ export async function handleAuth(mode, formData, router, setError) {
     const token = res.token;
     localStorage.setItem(TOKEN_KEY, token);
 
-    const payload = parseJwt(token);
-    const { setToken, setName, setEmail } = useAuthStore.getState();
-
-    setToken(token);
-    setName(payload.name);
-    setEmail(payload.email);
-
+    saveTokenToStore(token);
     router.push("/dashboard");
   } catch (err) {
     setError(err.message);

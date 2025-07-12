@@ -3,6 +3,6 @@ import { useAuthStore } from "../zustand/useAuthStore";
 
 export function logout(router) {
   localStorage.removeItem(TOKEN_KEY);
-  useAuthStore.getState().reset();  // assumes reset clears name, email, token
+  useAuthStore.getState().reset();  
   router.replace("/login");
 }

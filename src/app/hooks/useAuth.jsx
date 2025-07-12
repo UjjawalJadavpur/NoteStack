@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "../zustand/useAuthStore";
+import { saveTokenToStore } from "../utils/authUtils";
 import { parseJwt } from "../utils/parseJwt";
 import { TOKEN_KEY } from "../utils/constants";
 
 export function useAuth({ guard = false } = {}) {
-  const { token, setToken, setName, setEmail } = useAuthStore();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
@@ -21,8 +20,7 @@ export function useAuth({ guard = false } = {}) {
     }
 
     const payload = parseJwt(storedToken);
-    
-    // If token is invalid or expired
+
     if (!payload || payload.exp * 1000 < Date.now()) {
       localStorage.removeItem(TOKEN_KEY);
       if (guard) router.replace("/login");
@@ -30,13 +28,10 @@ export function useAuth({ guard = false } = {}) {
       return;
     }
 
-    // Valid token
-    setToken(storedToken);
-    if (payload.name) setName(payload.name);
-    if (payload.email) setEmail(payload.email);
-    
+    saveTokenToStore(storedToken);
     setLoading(false);
-  }, [guard, router, setToken, setName, setEmail]);
+  }, [guard, router]);
 
+  const { token } = useAuthStore();
   return { loading, token };
 }
