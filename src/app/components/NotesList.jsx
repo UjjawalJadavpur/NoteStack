@@ -1,260 +1,128 @@
-"use client";
-
 import { useState } from "react";
-import { Trash2, Pencil, ArchiveRestore, Archive } from "lucide-react";
+import NoteCard from "./NoteCard";
+import NoteCardSkeleton from "./NoteCardSkeleton";
+import { groupNotes } from "../utils/noteGrouping";
 import { motion } from "framer-motion";
-import { exportNoteToPDF } from "../utils/exportToPdf.jsx";
-import TextToSpeechButton from "./TextToSpeechButton";
 
-function getNoteCategory(dateStr) {
-  const noteDate = new Date(dateStr);
-  const today = new Date();
 
-  const noteDay = noteDate.toDateString();
-  const todayDay = today.toDateString();
-
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const yesterdayDay = yesterday.toDateString();
-
-  if (noteDay === todayDay) return "Today";
-  if (noteDay === yesterdayDay) return "Yesterday";
-  return "Past";
-}
-
-function groupNotes(notes) {
-  return notes
-    .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .reduce((groups, note) => {
-      const category = getNoteCategory(note.createdAt);
-      if (!groups[category]) groups[category] = [];
-      groups[category].push(note);
-      return groups;
-    }, {});
-}
-
-const categoryColors = {
-  Today: {
-    bg: "bg-green-50",
-    border: "border-green-300",
-    gradient: "bg-gradient-to-r from-green-600 to-emerald-500",
-    text: "text-white",
-  },
-  Yesterday: {
-    bg: "bg-yellow-50",
-    border: "border-yellow-300",
-    gradient: "bg-gradient-to-r from-yellow-500 to-orange-400",
-    text: "text-white",
-  },
-  Past: {
-    bg: "bg-gray-50",
-    border: "border-gray-300",
-    gradient: "bg-gradient-to-r from-gray-700 to-gray-600",
-    text: "text-white",
-  },
-};
-
+// Add loading as prop
 export default function NotesList({
   notes,
   onDelete,
   onEdit,
   onArchiveToggle,
+  loading,
 }) {
   const [selectedNote, setSelectedNote] = useState(null);
-
-  if (notes.length === 0) {
-    return (
-      <p className="text-gray-500 text-center italic">No notes available.</p>
-    );
-  }
+  const [pastPage, setPastPage] = useState(1);
 
   const grouped = groupNotes(notes);
+  const ITEMS_PER_PAGE = 6;
+
+  const shimmerArray = (count) =>
+    Array.from({ length: count }).map((_, i) => <NoteCardSkeleton key={i} />);
+
+  const renderHorizontalSection = (category) => (
+    <section key={category}>
+      <h3 className="text-xl font-bold text-gray-700 mb-2">{category}</h3>
+      <div className="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+        {loading
+          ? shimmerArray(4)
+          : grouped[category]?.map((note, index) => (
+              <motion.div
+                key={note.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="snap-start"
+              >
+                <NoteCard
+                  note={note}
+                  category={category}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onArchiveToggle={onArchiveToggle}
+                  onReadMore={() => setSelectedNote(note)}
+                />
+              </motion.div>
+            ))}
+      </div>
+    </section>
+  );
+
+  const renderPaginatedSection = () => {
+    const pastNotes = grouped["Past"] || [];
+    const totalPages = Math.ceil(pastNotes.length / ITEMS_PER_PAGE);
+    const paginatedNotes = pastNotes.slice(
+      (pastPage - 1) * ITEMS_PER_PAGE,
+      pastPage * ITEMS_PER_PAGE
+    );
+
+    return (
+      <section key="Past">
+        <h3 className="text-xl font-bold text-gray-700 mb-2">Past</h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading
+            ? shimmerArray(6).map((skeleton, i) => (
+                <div key={i}>
+                  <NoteCardSkeleton vertical />
+                </div>
+              ))
+            : paginatedNotes.map((note, index) => (
+                <motion.div
+                  key={note.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                >
+                  <NoteCard
+                    note={note}
+                    category="Past"
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onArchiveToggle={onArchiveToggle}
+                    onReadMore={() => setSelectedNote(note)}
+                  />
+                </motion.div>
+              ))}
+        </div>
+
+        {!loading && totalPages > 1 && (
+          <div className="mt-4 flex justify-center items-center gap-2">
+            {Array.from({ length: totalPages }).map((_, i) => {
+              const pageNum = i + 1;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPastPage(pageNum)}
+                  className={`px-3 py-1 rounded-full border ${
+                    pastPage === pageNum
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-blue-600 border-blue-300"
+                  } hover:bg-blue-500 hover:text-white transition`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    );
+  };
 
   return (
     <>
       <div className="space-y-10">
-        {["Today", "Yesterday", "Past"].map((category) =>
-          grouped[category] ? (
-            <section key={category}>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">
-                {category}
-              </h3>
-
-              <div className="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
-                {grouped[category].map((note, index) => {
-                  const date = new Date(note.createdAt);
-                  const formattedDate = new Intl.DateTimeFormat("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }).format(date);
-
-                  const color = categoryColors[category];
-                  const isLongContent = note.content.length > 200;
-
-                  return (
-                    <motion.div
-                      key={note.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className={`min-w-[400px] max-w-[450px] border ${
-                        color.border
-                      } ${color.bg} ${
-                        note.archived ? "opacity-50" : ""
-                      } p-0 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 snap-start`}
-                    >
-                      {/* Header */}
-                      <div
-                        className={`px-4 py-2 rounded-t-2xl ${color.gradient} ${color.text} flex justify-between items-center shadow-inner`}
-                      >
-                        <h2 className="text-lg font-semibold truncate max-w-[60%]">
-                          {note.title || "Untitled"}
-                        </h2>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                              note.priority === "HIGH"
-                                ? "bg-red-100 text-red-600"
-                                : note.priority === "LOW"
-                                ? "bg-green-100 text-green-600"
-                                : "bg-yellow-100 text-yellow-600"
-                            }`}
-                          >
-                            {note.priority}
-                          </span>
-
-                          {/* PDF Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              exportNoteToPDF(note);
-                            }}
-                            className="hover:text-blue-200 transition-colors p-1 cursor-pointer"
-                            title="Export to PDF"
-                          >
-                            🖨️
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onArchiveToggle(note);
-                            }}
-                            className="hover:text-purple-200 transition-colors p-1 cursor-pointer"
-                          >
-                            {note.archived ? (
-                              <ArchiveRestore className="w-5 h-5" />
-                            ) : (
-                              <Archive className="w-5 h-5" />
-                            )}
-                          </button>
-                          {!note.archived && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit(note);
-                              }}
-                              className="hover:text-yellow-300 transition-colors p-1 cursor-pointer"
-                            >
-                              <Pencil className="w-5 h-5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(note.id);
-                            }}
-                            className="hover:text-red-300 transition-colors p-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="px-4 py-3 flex flex-col justify-between h-[180px]">
-                        <div
-                          className="prose prose-sm max-w-none text-gray-800 mb-2 line-clamp-4 overflow-hidden"
-                          dangerouslySetInnerHTML={{ __html: note.content }}
-                        ></div>
-
-                        {isLongContent && (
-                          <button
-                            onClick={() => setSelectedNote(note)}
-                            className="text-blue-600 text-sm font-medium hover:underline self-start mb-2 cursor-pointer"
-                          >
-                            Read more...
-                          </button>
-                        )}
-
-                        <div className="flex justify-between items-center text-xs text-gray-500 mt-auto">
-                          <span>{formattedDate}</span>
-                          {note.archived && (
-                            <span className="bg-gray-200 px-2 py-0.5 rounded-full text-gray-700 font-medium">
-                              Archived
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null
+        {["Today", "Yesterday"].map((cat) =>
+          loading || grouped[cat] ? renderHorizontalSection(cat) : null
         )}
+        {loading || grouped["Past"] ? renderPaginatedSection() : null}
       </div>
 
-      {/* Full-screen Read Modal */}
       {selectedNote && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center px-4">
-          <div className="bg-white max-w-2xl w-full rounded-xl p-6 shadow-lg relative">
-            <button
-              onClick={() => setSelectedNote(null)}
-              className="absolute top-3 right-3 text-gray-500 hover:text-red-500 text-xl"
-            >
-              ✕
-            </button>
-
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-800">
-                {selectedNote.title || "Untitled"}
-              </h2>
-              <TextToSpeechButton
-                rawText={selectedNote.title + ". " + selectedNote.content}
-              />
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <span className="font-medium">
-                  Priority:{" "}
-                  <span
-                    className={`inline-block px-2 py-1 rounded-full ${
-                      selectedNote.priority === "HIGH"
-                        ? "bg-red-100 text-red-600"
-                        : selectedNote.priority === "LOW"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-yellow-100 text-yellow-600"
-                    }`}
-                  >
-                    {selectedNote.priority}
-                  </span>
-                </span>
-                <span>
-                  {new Intl.DateTimeFormat("en-US", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }).format(new Date(selectedNote.createdAt))}
-                </span>
-              </div>
-
-              <div
-                className="max-h-[50vh] overflow-y-auto text-gray-800 border rounded-md p-4 bg-gray-50 prose prose-base max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedNote.content }}
-              ></div>
-            </div>
-          </div>
-        </div>
+        <ReadNoteModal note={selectedNote} onClose={() => setSelectedNote(null)} />
       )}
     </>
   );

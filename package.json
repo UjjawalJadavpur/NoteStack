@@ -25,6 +25,7 @@
     "next": "15.3.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
     "react-quill": "^2.0.0",
     "react-speech-kit": "^3.0.1",
     "suneditor": "^2.47.6",

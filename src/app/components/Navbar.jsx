@@ -4,18 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, ChevronDown } from "lucide-react";
 import { useAuthStore } from "../zustand/useAuthStore";
+import { useLogout } from "../hooks/useLogout";
 
 export default function Navbar() {
   const router = useRouter();
   const { name, email, reset } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const logout = useLogout();
 
-  function logout() {
-    localStorage.removeItem("token");
-    reset();
-    router.push("/login");
-  }
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -44,7 +41,9 @@ export default function Navbar() {
 
       {/* Right - Brand + Dropdown */}
       <div className="flex items-center gap-6 relative">
-        <div className="text-lg font-bold text-blue-700 tracking-wide">NoteStack</div>
+        <div className="text-lg font-bold text-blue-700 tracking-wide">
+          NoteStack
+        </div>
 
         <div className="relative" ref={dropdownRef}>
           <button
@@ -61,7 +60,9 @@ export default function Navbar() {
           {/* Dropdown */}
           <div
             className={`absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-20 transition-all duration-200 transform origin-top-right ${
-              dropdownOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
+              dropdownOpen
+                ? "scale-100 opacity-100"
+                : "scale-95 opacity-0 pointer-events-none"
             }`}
           >
             {/* User Info */}
