@@ -50,7 +50,7 @@ export default function NoteCard({
 
   return (
     <div
-      className={`min-w-[400px] max-w-[450px] border ${color.border} ${color.bg} ${
+      className={`w-[320px] border ${color.border} ${color.bg} ${
         note.archived ? "opacity-50" : ""
       } p-0 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300`}
     >
@@ -91,7 +91,11 @@ export default function NoteCard({
             }}
             className="hover:text-purple-200 transition-colors p-1"
           >
-            {note.archived ? <ArchiveRestore className="w-5 h-5" /> : <Archive className="w-5 h-5" />}
+            {note.archived ? (
+              <ArchiveRestore className="w-5 h-5" />
+            ) : (
+              <Archive className="w-5 h-5" />
+            )}
           </button>
           {!note.archived && (
             <button

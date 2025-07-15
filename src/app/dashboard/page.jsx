@@ -61,9 +61,9 @@ useDebouncedEffect(fetchNotesForTab, [fetchNotesForTab], 300);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200">
-      {/* <Navbar /> */}
+      <Navbar />
       <main className="p-6">
-        {/* <NoteTabs tab={tab} setTab={setTab} loading={notesLoading} /> */}
+        <NoteTabs tab={tab} setTab={setTab} loading={notesLoading} />
 
         {notesLoading ? (
           <div className="flex justify-center items-center h-40 text-gray-400">

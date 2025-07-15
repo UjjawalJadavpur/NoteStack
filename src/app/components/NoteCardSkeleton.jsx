@@ -3,7 +3,7 @@ export default function NoteCardSkeleton({ vertical = false }) {
   return (
     <div
       className={`animate-pulse ${
-        vertical ? "w-full" : "min-w-[400px] max-w-[450px]"
+        vertical ? "w-full" : "w-[420px]"
       } border border-gray-300 bg-gray-100 rounded-2xl p-4 shadow-sm`}
     >
       <div className="h-6 w-1/2 bg-gray-300 rounded mb-2"></div>
